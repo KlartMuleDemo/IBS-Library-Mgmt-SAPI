@@ -1,0 +1,17 @@
+http:
+  port: "8083"
+  path: "/api/uat/*"
+  readtimeout: "30000"
+  
+db:
+  username: "lakshmiuat"
+  password: "shlkfdlsh"
+  dbname: "sdkjfhdskjl"
+  
+api:
+  id: "19797025"
+  
+mule:
+  env: "dev"
+  
+  

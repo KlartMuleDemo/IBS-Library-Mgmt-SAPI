@@ -1,0 +1,19 @@
+http:
+  port: "8084"
+  path: "/api/prod/*"
+  readtimeout: "45000"
+  
+db:
+  username: "lakshmiprod"
+  password: "shlkfdlsh"
+  dbname: "sdkjfhdskjl"
+  
+  
+api:
+  id: "19797025"
+  
+  
+mule:
+  env: "dev"
+  
+  

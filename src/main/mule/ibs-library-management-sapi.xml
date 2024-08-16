@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+    <http:listener-config name="ibs-library-management-sapi-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="${http.port}" readTimeout="${http.readtimeout}"/>
+    </http:listener-config>
+    <apikit:config name="ibs-library-management-sapi-config" api="resource::d50680e2-59de-4ccc-8b98-5d663578df53:ibs-library-management-sapi:1.0.0:raml:zip:ibs-library-management-sapi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+	<configuration-properties doc:name="Configuration properties" doc:id="82ebdf4f-0d17-4c31-a250-41a998aa80d1" file="properties/${mule.env}.yaml" />
+	<!-- <api-gateway:autodiscovery apiId="${api.id}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="c62c040c-4723-46b6-8e04-92ab62e518ee" flowRef="ibs-library-management-sapi-main" /> -->
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="05b22892-80e3-40b3-90b4-b522ebe90c87" >
+		<db:my-sql-connection host="bhks2wrp1hiplsufwnsm-mysql.services.clever-cloud.com" port="3306" user="uvrtczhmacxsn2ex" password="cGPVEeML9ZCJJHPXXPlO" database="bhks2wrp1hiplsufwnsm" />
+	</db:config>
+	<db:config name="Database_Config-new" doc:name="Database Config" doc:id="c7ae4141-2aa5-4d62-99c4-ab8783d3de1f" >
+		<db:my-sql-connection host="bhks2wrp1hiplsufwnsm-mysql.services.clever-cloud.com" port="3306" user="uvrtczhmacxsn2ex" password="cGPVEeML9ZCJJHPXXPlO" database="bhks2wrp1hiplsufwnsm" />
+	</db:config>
+	<flow name="ibs-library-management-sapi-main">
+        <http:listener config-ref="ibs-library-management-sapi-httpListenerConfig" path="${http.path}">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="ibs-library-management-sapi-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="ibs-library-management-sapi-console">
+        <http:listener config-ref="ibs-library-management-sapi-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="ibs-library-management-sapi-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\Libraries:ibs-library-management-sapi-config">
+        <logger level="INFO" message="get:\Libraries:ibs-library-management-sapi-config" />
+		<db:select doc:name="Select" doc:id="9376ffee-6fb6-4566-8a22-adc4891857b5" config-ref="Database_Config-new">
+			<db:sql ><![CDATA[select * from LibraryDetails]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="4c09e170-3ab5-4d37-b11c-a700855ad30d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+result : payload map (a,b) -> {
+	lbranch: a.libraryBranch,
+	lcode: a.libraryCode
+	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+    </flow>
+    <flow name="get:\books:ibs-library-management-sapi-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  libraryCode: "IBS111",
+  books: [
+    {
+      bookCode: "BK666",
+      title: "MuleSoft Mastery",
+      author: "Klart",
+      bookCategory: "Tech",
+      readTimeInHrs: 36,
+      rentalPrice: "100 Rs",
+      rating: 4,
+      bestSeller: "YES"
+    }, 
+    {
+      bookCode: "BK555",
+      title: "SAP MM",
+      author: "Klart Technologies",
+      bookCategory: "Technology",
+      readTimeInHrs: 65,
+      rentalPrice: "200Rs",
+      rating: 4,
+      bestSeller: "YES"
+    }
+  ]
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\Libraries\(LibraryId):ibs-library-management-sapi-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:variables>
+                <ee:set-variable variableName="LibraryId">attributes.uriParams.'LibraryId'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <logger level="INFO" message="get:\Libraries\(LibraryId):ibs-library-management-sapi-config" />
+    </flow>
+    <flow name="post:\books:application\json:ibs-library-management-sapi-config">
+        <logger level="INFO" message="post:\books:application\json:ibs-library-management-sapi-config" />
+    </flow>
+</mule>

@@ -1,0 +1,15 @@
+http:
+  port: "8081"
+  path: "/api/dev/*"
+  readtimeout: "30000"
+  
+db:
+  username: "lakshmi"
+  password: "shlkfdlsh"
+  dbname: "sdkjfhdskjl"
+  
+api:
+  id: "19797025"
+  
+mule:
+  env: "dev"
